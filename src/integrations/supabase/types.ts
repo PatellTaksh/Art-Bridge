@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      artworks: {
+        Row: {
+          created_at: string
+          description: string | null
+          fractions_available: number | null
+          fractions_total: number | null
+          id: string
+          image_url: string | null
+          metadata: Json | null
+          owner_user_id: string | null
+          owner_wallet: string | null
+          price_amount: number | null
+          price_denom: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fractions_available?: number | null
+          fractions_total?: number | null
+          id?: string
+          image_url?: string | null
+          metadata?: Json | null
+          owner_user_id?: string | null
+          owner_wallet?: string | null
+          price_amount?: number | null
+          price_denom?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fractions_available?: number | null
+          fractions_total?: number | null
+          id?: string
+          image_url?: string | null
+          metadata?: Json | null
+          owner_user_id?: string | null
+          owner_wallet?: string | null
+          price_amount?: number | null
+          price_denom?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       auctions: {
         Row: {
           created_at: string
@@ -261,30 +312,89 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
           id: string
+          role: string | null
           updated_at: string
           user_id: string
           wallet_address: string | null
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          role?: string | null
           updated_at?: string
           user_id: string
           wallet_address?: string | null
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          role?: string | null
           updated_at?: string
           user_id?: string
           wallet_address?: string | null
         }
         Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          artwork_id: string | null
+          buyer_user_id: string | null
+          created_at: string
+          currency: string | null
+          id: string
+          metadata: Json | null
+          seller_user_id: string | null
+          status: string
+          transaction_type: string
+          tx_hash: string | null
+        }
+        Insert: {
+          amount: number
+          artwork_id?: string | null
+          buyer_user_id?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          seller_user_id?: string | null
+          status?: string
+          transaction_type?: string
+          tx_hash?: string | null
+        }
+        Update: {
+          amount?: number
+          artwork_id?: string | null
+          buyer_user_id?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          seller_user_id?: string | null
+          status?: string
+          transaction_type?: string
+          tx_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_artwork_id_fkey"
+            columns: ["artwork_id"]
+            isOneToOne: false
+            referencedRelation: "artworks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       valuation_cache: {
         Row: {
