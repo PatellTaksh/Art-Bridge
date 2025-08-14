@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ArtCard from "@/components/ui/art-card";
+import BiddingModal from "@/components/modals/BiddingModal";
 import { Clock, Gavel, Users2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import auctionFeatured from "@/assets/auction-featured.jpg";
@@ -16,6 +17,14 @@ const Auction = () => {
     minutes: 32,
     seconds: 45
   });
+  const [showBiddingModal, setShowBiddingModal] = useState(false);
+
+  const featuredArtwork = {
+    title: "The Great Wave off Kanagawa",
+    artist: "Hokusai",
+    image: auctionFeatured,
+    currentBid: 127.5
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -154,7 +163,11 @@ const Auction = () => {
                   </div>
                 </div>
 
-                <Button size="lg" className="btn-hero w-full text-lg">
+                <Button 
+                  size="lg" 
+                  className="btn-hero w-full text-lg"
+                  onClick={() => setShowBiddingModal(true)}
+                >
                   Place Bid
                 </Button>
               </div>
@@ -184,6 +197,12 @@ const Auction = () => {
           </Button>
         </div>
       </div>
+
+      <BiddingModal
+        isOpen={showBiddingModal}
+        onClose={() => setShowBiddingModal(false)}
+        artwork={featuredArtwork}
+      />
     </section>
   );
 };

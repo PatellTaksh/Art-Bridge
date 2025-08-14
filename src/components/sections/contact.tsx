@@ -4,8 +4,100 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, Phone, MapPin, MessageSquare } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    subject: "",
+    message: ""
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const { toast } = useToast();
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+    if (!formData.message.trim()) {
+      newErrors.message = "Message is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      toast({
+        title: "Please fix the errors",
+        description: "All required fields must be filled correctly",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('send-contact-email', {
+        body: formData
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Confirmation sent to your email!",
+        description: "We'll respond to your query within 24 hours.",
+      });
+
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        subject: "",
+        message: ""
+      });
+
+    } catch (error: any) {
+      console.error("Error sending email:", error);
+      toast({
+        title: "Error sending message",
+        description: "Please try again or contact us directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section id="contact" className="py-24 bg-background-secondary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,20 +117,29 @@ const Contact = () => {
             <div>
               <h3 className="text-2xl font-semibold text-foreground mb-6">Send us a Message</h3>
               
-              <form className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
+                    <Label htmlFor="firstName">First Name *</Label>
                     <Input 
                       id="firstName" 
+                      value={formData.firstName}
+                      onChange={(e) => handleInputChange("firstName", e.target.value)}
                       placeholder="Enter your first name"
-                      className="bg-background border-border focus:border-primary"
+                      className={`bg-background border-border focus:border-primary ${
+                        errors.firstName ? "border-destructive" : ""
+                      }`}
                     />
+                    {errors.firstName && (
+                      <p className="text-sm text-destructive">{errors.firstName}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input 
                       id="lastName" 
+                      value={formData.lastName}
+                      onChange={(e) => handleInputChange("lastName", e.target.value)}
                       placeholder="Enter your last name"
                       className="bg-background border-border focus:border-primary"
                     />
@@ -46,18 +147,25 @@ const Contact = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <Input 
                     id="email" 
                     type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
                     placeholder="Enter your email address"
-                    className="bg-background border-border focus:border-primary"
+                    className={`bg-background border-border focus:border-primary ${
+                      errors.email ? "border-destructive" : ""
+                    }`}
                   />
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="subject">Subject</Label>
-                  <Select>
+                  <Select value={formData.subject} onValueChange={(value) => handleInputChange("subject", value)}>
                     <SelectTrigger className="bg-background border-border focus:border-primary">
                       <SelectValue placeholder="Select a subject" />
                     </SelectTrigger>
@@ -72,17 +180,28 @@ const Contact = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
+                  <Label htmlFor="message">Message *</Label>
                   <Textarea 
                     id="message"
+                    value={formData.message}
+                    onChange={(e) => handleInputChange("message", e.target.value)}
                     placeholder="Tell us how we can help you..."
                     rows={6}
-                    className="bg-background border-border focus:border-primary resize-none"
+                    className={`bg-background border-border focus:border-primary resize-none ${
+                      errors.message ? "border-destructive" : ""
+                    }`}
                   />
+                  {errors.message && (
+                    <p className="text-sm text-destructive">{errors.message}</p>
+                  )}
                 </div>
 
-                <Button type="submit" className="btn-hero w-full text-lg py-3">
-                  Send Message
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="btn-hero w-full text-lg py-3"
+                >
+                  {isSubmitting ? "Sending..." : "Send Message"}
                 </Button>
               </form>
             </div>

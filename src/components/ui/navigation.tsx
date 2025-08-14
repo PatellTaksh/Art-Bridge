@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
+import WalletDropdown from "@/components/ui/wallet-dropdown";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Wallet, User } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const Navigation = () => {
@@ -48,9 +49,7 @@ const Navigation = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="outline" size="sm">
-              Connect Wallet
-            </Button>
+            {user && <WalletDropdown />}
             {user ? (
               <div className="flex items-center space-x-2">
                 <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
@@ -64,7 +63,6 @@ const Navigation = () => {
             ) : (
               <Link to="/auth">
                 <Button size="sm" className="btn-hero">
-                  <Wallet className="w-4 h-4 mr-2" />
                   Sign In
                 </Button>
               </Link>
@@ -104,9 +102,11 @@ const Navigation = () => {
               </a>
               <div className="pt-4 pb-3 border-t border-border">
                 <div className="flex flex-col space-y-2">
-                  <Button variant="outline" size="sm">
-                    Connect Wallet
-                  </Button>
+                  {user && (
+                    <div className="mb-2">
+                      <WalletDropdown />
+                    </div>
+                  )}
                   {user ? (
                     <>
                       <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
@@ -120,7 +120,6 @@ const Navigation = () => {
                   ) : (
                     <Link to="/auth">
                       <Button size="sm" className="btn-hero">
-                        <Wallet className="w-4 h-4 mr-2" />
                         Sign In
                       </Button>
                     </Link>

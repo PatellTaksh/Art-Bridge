@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import BuyFractionsModal from "@/components/modals/BuyFractionsModal";
 import { Heart, TrendingUp } from "lucide-react";
 import { useState } from "react";
 
@@ -25,6 +26,15 @@ const ArtCard = ({
   growth 
 }: ArtCardProps) => {
   const [liked, setLiked] = useState(isLiked);
+  const [showBuyModal, setShowBuyModal] = useState(false);
+
+  const artwork = {
+    title,
+    artist,
+    image,
+    pricePerPercent: 150,
+    totalValue: 15000
+  };
 
   return (
     <div className="art-card group">
@@ -93,9 +103,19 @@ const ArtCard = ({
           </div>
         </div>
 
-        <Button className="w-full btn-hero">
-          Place Bid
+        <Button 
+          className="w-full btn-hero"
+          onClick={() => setShowBuyModal(true)}
+        >
+          <TrendingUp className="w-4 h-4 mr-1" />
+          Buy Fractions
         </Button>
+        
+        <BuyFractionsModal
+          isOpen={showBuyModal}
+          onClose={() => setShowBuyModal(false)}
+          artwork={artwork}
+        />
       </div>
     </div>
   );
