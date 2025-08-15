@@ -272,7 +272,11 @@ const Contact = () => {
               <p className="text-muted-foreground mb-4">
                 Check out our comprehensive FAQ section for instant answers to common questions about art investment, platform usage, and more.
               </p>
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' })}
+              >
                 Browse FAQ
               </Button>
             </div>

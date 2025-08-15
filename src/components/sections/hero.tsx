@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Users, DollarSign, TrendingUp } from "lucide-react";
 import heroArtwork from "@/assets/hero-artwork.jpg";
+import VideoModal from "@/components/modals/VideoModal";
 
 const Hero = () => {
   return (
@@ -32,14 +33,18 @@ const Hero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-            <Button size="lg" className="btn-hero text-lg px-8 py-4">
+            <Button 
+              size="lg" 
+              className="btn-hero text-lg px-8 py-4"
+              onClick={() => document.getElementById('marketplace')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               Start Investing
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-4">
-              <Play className="mr-2 h-5 w-5" />
-              Watch Demo
-            </Button>
+            <VideoModal 
+              videoId="dQw4w9WgXcQ"
+              title="ArtBridge Platform Demo"
+            />
           </div>
 
           {/* Stats */}

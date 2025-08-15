@@ -82,7 +82,7 @@ serve(async (req) => {
     // Send notification to support team
     const supportEmailResponse = await resend.emails.send({
       from: "ArtBridge Contact Form <onboarding@resend.dev>",
-      to: ["support@artbridge.com"],
+      to: ["abcxyz46346@gmail.com"],
       subject: `New query from ${email}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
