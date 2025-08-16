@@ -151,6 +151,13 @@ export type Database = {
             referencedRelation: "auctions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       chain_events: {
@@ -419,7 +426,145 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      auctions_public: {
+        Row: {
+          created_at: string | null
+          ends_at: string | null
+          id: string | null
+          nft_id: string | null
+          reserve_price: number | null
+          seller_user_id: string | null
+          seller_wallet: string | null
+          start_price: number | null
+          starts_at: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          ends_at?: string | null
+          id?: string | null
+          nft_id?: string | null
+          reserve_price?: number | null
+          seller_user_id?: never
+          seller_wallet?: never
+          start_price?: number | null
+          starts_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          ends_at?: string | null
+          id?: string | null
+          nft_id?: string | null
+          reserve_price?: number | null
+          seller_user_id?: never
+          seller_wallet?: never
+          start_price?: number | null
+          starts_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auctions_nft_id_fkey"
+            columns: ["nft_id"]
+            isOneToOne: false
+            referencedRelation: "nfts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bids_public: {
+        Row: {
+          amount: number | null
+          auction_id: string | null
+          bidder_user_id: string | null
+          bidder_wallet: string | null
+          created_at: string | null
+          id: string | null
+          tx_hash: string | null
+        }
+        Insert: {
+          amount?: number | null
+          auction_id?: string | null
+          bidder_user_id?: never
+          bidder_wallet?: never
+          created_at?: string | null
+          id?: string | null
+          tx_hash?: never
+        }
+        Update: {
+          amount?: number | null
+          auction_id?: string | null
+          bidder_user_id?: never
+          bidder_wallet?: never
+          created_at?: string | null
+          id?: string | null
+          tx_hash?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings_public: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          nft_id: string | null
+          price_amount: number | null
+          price_denom: string | null
+          seller_user_id: string | null
+          seller_wallet: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          nft_id?: string | null
+          price_amount?: number | null
+          price_denom?: string | null
+          seller_user_id?: never
+          seller_wallet?: never
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          nft_id?: string | null
+          price_amount?: number | null
+          price_denom?: string | null
+          seller_user_id?: never
+          seller_wallet?: never
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listings_nft_id_fkey"
+            columns: ["nft_id"]
+            isOneToOne: false
+            referencedRelation: "nfts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
