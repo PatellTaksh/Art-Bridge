@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Resend client will be initialized within the handler after validation
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -96,6 +96,19 @@ serve(async (req) => {
     }
 
     console.log('All validations passed, sending emails...');
+    // Initialize Resend safely after validations to avoid top-level crashes
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    if (!RESEND_API_KEY) {
+      console.error("Missing RESEND_API_KEY");
+      return new Response(
+        JSON.stringify({
+          error: "Email service not configured",
+          details: "Missing RESEND_API_KEY. Please configure the email provider.",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const resend = new Resend(RESEND_API_KEY);
 
     // Send confirmation email to user
     const userEmailResponse = await resend.emails.send({
