@@ -3,6 +3,22 @@ import { Resend } from "npm:resend@2.0.0";
 
 // Resend client will be initialized within the handler after validation
 
+// HTML sanitization function to prevent XSS attacks
+function sanitizeHtml(input: string): string {
+  if (!input) return '';
+  
+  // Basic HTML entity encoding to prevent XSS
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;')
+    // Limit length to prevent abuse
+    .slice(0, 10000);
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -95,6 +111,13 @@ serve(async (req) => {
       );
     }
 
+    // Sanitize all user inputs to prevent XSS attacks
+    const sanitizedFirstName = sanitizeHtml(firstName.trim());
+    const sanitizedLastName = sanitizeHtml(lastName?.trim() || '');
+    const sanitizedEmail = sanitizeHtml(email.trim());
+    const sanitizedSubject = sanitizeHtml(subject?.trim() || 'General Inquiry');
+    const sanitizedMessage = sanitizeHtml(message.trim());
+
     console.log('All validations passed, sending emails...');
     // Initialize Resend safely after validations to avoid top-level crashes
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -122,7 +145,7 @@ serve(async (req) => {
             <p style="color: #666; font-size: 16px; margin: 10px 0 0 0;">Art Investment Platform</p>
           </div>
           
-          <h2 style="color: #333; font-size: 24px; margin-bottom: 20px;">Hi ${firstName},</h2>
+          <h2 style="color: #333; font-size: 24px; margin-bottom: 20px;">Hi ${sanitizedFirstName},</h2>
           
           <p style="color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
             Thank you for contacting ArtBridge! We have successfully received your message and our team will respond within 24 hours.
@@ -130,13 +153,13 @@ serve(async (req) => {
           
           <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 25px; border-radius: 12px; margin: 30px 0; border-left: 4px solid #ff6600;">
             <h3 style="color: #333; font-size: 18px; margin: 0 0 15px 0;">Your Message Summary:</h3>
-            <p style="margin: 10px 0; color: #555;"><strong>Name:</strong> ${firstName} ${lastName || ''}</p>
-            <p style="margin: 10px 0; color: #555;"><strong>Email:</strong> ${email}</p>
-            <p style="margin: 10px 0; color: #555;"><strong>Subject:</strong> ${subject || 'General Inquiry'}</p>
+            <p style="margin: 10px 0; color: #555;"><strong>Name:</strong> ${sanitizedFirstName} ${sanitizedLastName}</p>
+            <p style="margin: 10px 0; color: #555;"><strong>Email:</strong> ${sanitizedEmail}</p>
+            <p style="margin: 10px 0; color: #555;"><strong>Subject:</strong> ${sanitizedSubject}</p>
             <div style="margin: 15px 0;">
               <strong style="color: #555;">Message:</strong>
               <div style="background: white; padding: 15px; border-radius: 8px; margin-top: 8px; border: 1px solid #dee2e6;">
-                <p style="margin: 0; color: #333; font-style: italic; line-height: 1.5;">"${message}"</p>
+                <p style="margin: 0; color: #333; font-style: italic; line-height: 1.5;">"${sanitizedMessage}"</p>
               </div>
             </div>
           </div>
@@ -189,16 +212,16 @@ serve(async (req) => {
             <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
               <h3 style="color: #333; font-size: 20px; margin: 0 0 20px 0; padding-bottom: 10px; border-bottom: 2px solid #ff6600;">📋 Contact Details</h3>
               <div style="display: grid; gap: 12px;">
-                <p style="margin: 0; padding: 8px 0; border-bottom: 1px solid #eee;"><strong style="color: #555; width: 100px; display: inline-block;">Name:</strong> <span style="color: #333;">${firstName} ${lastName || ''}</span></p>
-                <p style="margin: 0; padding: 8px 0; border-bottom: 1px solid #eee;"><strong style="color: #555; width: 100px; display: inline-block;">Email:</strong> <a href="mailto:${email}" style="color: #ff6600; text-decoration: none;">${email}</a></p>
-                <p style="margin: 0; padding: 8px 0;"><strong style="color: #555; width: 100px; display: inline-block;">Subject:</strong> <span style="color: #333;">${subject || 'General Inquiry'}</span></p>
+                <p style="margin: 0; padding: 8px 0; border-bottom: 1px solid #eee;"><strong style="color: #555; width: 100px; display: inline-block;">Name:</strong> <span style="color: #333;">${sanitizedFirstName} ${sanitizedLastName}</span></p>
+                <p style="margin: 0; padding: 8px 0; border-bottom: 1px solid #eee;"><strong style="color: #555; width: 100px; display: inline-block;">Email:</strong> <a href="mailto:${sanitizedEmail}" style="color: #ff6600; text-decoration: none;">${sanitizedEmail}</a></p>
+                <p style="margin: 0; padding: 8px 0;"><strong style="color: #555; width: 100px; display: inline-block;">Subject:</strong> <span style="color: #333;">${sanitizedSubject}</span></p>
               </div>
             </div>
             
             <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
               <h3 style="color: #333; font-size: 20px; margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #ff6600;">💬 Message Content</h3>
               <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #ff6600;">
-                <p style="margin: 0; color: #333; line-height: 1.6; font-size: 15px; white-space: pre-wrap;">${message}</p>
+                <p style="margin: 0; color: #333; line-height: 1.6; font-size: 15px; white-space: pre-wrap;">${sanitizedMessage}</p>
               </div>
             </div>
             
@@ -217,7 +240,7 @@ serve(async (req) => {
             </div>
             
             <div style="text-align: center; margin-top: 30px;">
-              <a href="mailto:${email}?subject=Re: ${subject || 'Your inquiry'}" 
+              <a href="mailto:${sanitizedEmail}?subject=Re: ${sanitizedSubject}" 
                  style="background: #ff6600; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">
                 📧 Reply to Customer
               </a>
