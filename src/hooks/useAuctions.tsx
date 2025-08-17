@@ -67,12 +67,16 @@ export const useAuctions = () => {
             .eq('id', auction.nft_id)
             .single();
 
-          // Fetch seller profile
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('user_id', auction.seller_user_id)
-            .single();
+          // Fetch seller profile with limited info due to security policies
+          let artist = 'Unknown Artist';
+          if (auction.seller_user_id) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('user_id', auction.seller_user_id)
+              .maybeSingle();
+            artist = profileData?.display_name || 'Unknown Artist';
+          }
 
           // Fetch bids
           const { data: bidsData, error: bidsError } = await supabase
@@ -89,7 +93,7 @@ export const useAuctions = () => {
               title: artworkData?.title || 'Unknown Artwork',
               description: artworkData?.description,
               image_url: artworkData?.image_url,
-              artist: profileData?.display_name || 'Unknown Artist'
+              artist: artist
             },
             current_bid: highestBid,
             bid_count: bidsData?.length || 0
@@ -133,30 +137,17 @@ export const useBids = (auctionId: string) => {
     try {
       const { data, error } = await supabase
         .from('bids')
-        .select('*')
+        .select('id, amount, auction_id, created_at')
         .eq('auction_id', auctionId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Fetch profile data for each bid separately
-      const transformedBids = await Promise.all(
-        (data || []).map(async (bid) => {
-          let bidder_name = 'Anonymous';
-          if (bid.bidder_user_id) {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('display_name')
-              .eq('user_id', bid.bidder_user_id)
-              .single();
-            bidder_name = profileData?.display_name || bid.bidder_wallet || 'Anonymous';
-          }
-          return {
-            ...bid,
-            bidder_name
-          };
-        })
-      );
+      // With new security policies, bidder identity is hidden from public view
+      const transformedBids = (data || []).map((bid) => ({
+        ...bid,
+        bidder_name: 'Anonymous Bidder'
+      }));
 
       setBids(transformedBids);
     } catch (err: any) {
