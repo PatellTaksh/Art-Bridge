@@ -29,6 +29,7 @@ const ArtCard = ({
   const [showBuyModal, setShowBuyModal] = useState(false);
 
   const artwork = {
+    id: '1', // Mock ID for demo
     title,
     artist,
     image,

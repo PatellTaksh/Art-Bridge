@@ -6,11 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ShoppingCart, Percent, DollarSign, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useFractionalOwnership } from "@/hooks/useFractionalOwnership";
 
 interface BuyFractionsModalProps {
   isOpen: boolean;
   onClose: () => void;
   artwork: {
+    id: string;
     title: string;
     artist: string;
     image: string;
@@ -26,6 +28,7 @@ const BuyFractionsModal = ({ isOpen, onClose, artwork }: BuyFractionsModalProps)
   const [paymentSuccess, setPaymentSuccess] = useState<boolean | null>(null);
   
   const { toast } = useToast();
+  const { purchaseFractions, loading } = useFractionalOwnership();
 
   const totalCost = ownershipPercent[0] * artwork.pricePerPercent;
 
@@ -33,29 +36,36 @@ const BuyFractionsModal = ({ isOpen, onClose, artwork }: BuyFractionsModalProps)
     setShowConfirmation(true);
   };
 
-  const handleProceedToPayment = () => {
+  const handleProceedToPayment = async () => {
     setShowConfirmation(false);
     setShowPayment(true);
     
-    // Simulate payment processing
-    setTimeout(() => {
-      // 80% chance of success
-      const success = Math.random() > 0.2;
-      setPaymentSuccess(success);
+    try {
+      // Process the actual purchase
+      const result = await purchaseFractions({
+        artworkId: artwork.id,
+        ownershipPercentage: ownershipPercent[0],
+        totalCost: totalCost,
+        currency: 'ETH'
+      });
       
-      if (success) {
-        toast({
-          title: "Purchase Successful!",
-          description: `You now own ${ownershipPercent[0]}% of "${artwork.title}"`,
-        });
-      } else {
+      setPaymentSuccess(result.success);
+      
+      if (!result.success) {
         toast({
           title: "Payment Failed",
-          description: "Please try again or use a different payment method",
+          description: result.error || "Please try again or use a different payment method",
           variant: "destructive",
         });
       }
-    }, 3000);
+    } catch (error) {
+      setPaymentSuccess(false);
+      toast({
+        title: "Payment Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleClose = () => {

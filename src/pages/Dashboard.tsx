@@ -7,7 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, TrendingDown, DollarSign, Palette, Activity, Plus } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Palette, Activity, Plus, Wallet, History } from 'lucide-react';
+import PortfolioAnalytics from '@/components/portfolio/PortfolioAnalytics';
+import WalletManagement from '@/components/wallet/WalletManagement';
+import TransactionHistory from '@/components/transactions/TransactionHistory';
 
 interface Profile {
   id: string;
@@ -127,47 +130,134 @@ const Dashboard = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="artworks">My Artworks</TabsTrigger>
+            <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+            <TabsTrigger value="artworks">Artworks</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            <TabsTrigger value="wallet">Wallet</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card>
-                <CardHeader>
-                  <CardTitle>Total Artworks</CardTitle>
-                  <CardDescription>Artworks you own</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{artworks.length}</div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Total Transactions</CardTitle>
-                  <CardDescription>Your trading activity</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{transactions.length}</div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Portfolio Value</CardTitle>
-                  <CardDescription>Estimated value</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Portfolio Value</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {artworks.reduce((sum, artwork) => sum + (artwork.price_amount || 0), 0).toFixed(2)} ETH
+                    ${(portfolioLoading ? 0 : stats.totalValue).toLocaleString()}
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    {!portfolioLoading && stats.gainsPercentage >= 0 ? '+' : ''}{!portfolioLoading ? stats.gainsPercentage.toFixed(1) : '0.0'}% from last month
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    ${(portfolioLoading ? 0 : stats.totalInvested).toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Across {!portfolioLoading ? stats.artworksOwned : 0} artworks
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Gains</CardTitle>
+                  {!portfolioLoading && stats.totalGains >= 0 ? 
+                    <TrendingUp className="h-4 w-4 text-green-600" /> : 
+                    <TrendingDown className="h-4 w-4 text-red-600" />
+                  }
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${!portfolioLoading && stats.totalGains >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {!portfolioLoading && stats.totalGains >= 0 ? '+' : ''}${(portfolioLoading ? 0 : stats.totalGains).toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {!portfolioLoading ? stats.gainsPercentage.toFixed(1) : '0.0'}% return
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Artworks Owned</CardTitle>
+                  <Palette className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {portfolioLoading ? 0 : stats.artworksOwned}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {transactions.length} total transactions
+                  </p>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                  <CardDescription>Get started with common tasks</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-3">
+                  <Button onClick={() => navigate('/create-artwork')} className="btn-hero">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Art
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate('/')}>
+                    <Palette className="h-4 w-4 mr-2" />
+                    Browse Market
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                  <CardDescription>Your latest transactions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {transactions.slice(0, 3).map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between py-2">
+                      <div className="text-sm">
+                        <p className="font-medium capitalize">{transaction.transaction_type}</p>
+                        <p className="text-muted-foreground">{new Date(transaction.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <div className="text-sm font-medium">
+                        {transaction.amount} {transaction.currency}
+                      </div>
+                    </div>
+                  ))}
+                  {transactions.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No recent activity</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="portfolio" className="space-y-6">
+            {portfolioLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-4 text-muted-foreground">Loading portfolio...</p>
+              </div>
+            ) : (
+              <PortfolioAnalytics stats={stats} holdings={holdings} />
+            )}
           </TabsContent>
 
           <TabsContent value="artworks" className="space-y-6">
@@ -204,34 +294,11 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="transactions" className="space-y-6">
-            <h2 className="text-2xl font-bold">Transaction History</h2>
-            
-            <div className="space-y-4">
-              {transactions.map((transaction) => (
-                <Card key={transaction.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-semibold capitalize">{transaction.transaction_type}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(transaction.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold">{transaction.amount} {transaction.currency}</p>
-                        <p className="text-sm text-muted-foreground capitalize">{transaction.status}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            {transactions.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No transactions yet.</p>
-              </div>
-            )}
+            <TransactionHistory />
+          </TabsContent>
+
+          <TabsContent value="wallet" className="space-y-6">
+            <WalletManagement profile={profile} onProfileUpdate={fetchUserData} />
           </TabsContent>
 
           <TabsContent value="profile" className="space-y-6">
