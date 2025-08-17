@@ -42,43 +42,57 @@ export const useFractionalOwnership = () => {
         throw new Error('No fractions available for this artwork');
       }
 
-      // 2. Create transaction record
-      const { data: transaction, error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          buyer_user_id: user.id,
-          seller_user_id: artwork.owner_user_id,
-          artwork_id: data.artworkId,
-          amount: data.totalCost,
-          currency: data.currency,
-          transaction_type: 'fraction_purchase',
-          status: 'completed', // In real app, this would be 'pending' until payment confirmation
-          metadata: {
-            ownership_percentage: data.ownershipPercentage,
-            fraction_count: 1, // Simplified - in real app this would be calculated
-            purchase_price_per_fraction: data.totalCost
-          }
-        })
-        .select()
-        .single();
+      // 2. Simulate payment processing (since we don't have a real payment processor)
+      // In a real app, this would integrate with Stripe, PayPal, etc.
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate payment processing time
 
-      if (transactionError) {
-        throw new Error('Failed to create transaction');
+      // For demo purposes, randomly succeed/fail 10% of the time to show error handling
+      if (Math.random() < 0.1) {
+        throw new Error('Payment processing failed. Please check your payment method and try again.');
       }
 
-      // 3. Update artwork fractions (simplified logic)
+      // 3. Create transaction record (simplified - in real app this would be in a secure database table)
+      const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Since we don't have a transactions table yet, we'll store this in artwork metadata
+      const currentMetadata = (artwork.metadata as any) || {};
+      const transactions = currentMetadata.transactions || [];
+      
+      const newTransaction = {
+        id: transactionId,
+        buyer_user_id: user.id,
+        seller_user_id: artwork.owner_user_id,
+        artwork_id: data.artworkId,
+        amount: data.totalCost,
+        currency: data.currency,
+        transaction_type: 'fraction_purchase',
+        status: 'completed',
+        created_at: new Date().toISOString(),
+        metadata: {
+          ownership_percentage: data.ownershipPercentage,
+          fraction_count: 1,
+          purchase_price_per_fraction: data.totalCost
+        }
+      };
+
+      transactions.push(newTransaction);
+
+      // 4. Update artwork fractions and store transaction
       const { error: updateError } = await supabase
         .from('artworks')
         .update({
-          fractions_available: artwork.fractions_available - 1,
+          fractions_available: Math.max(0, artwork.fractions_available - data.ownershipPercentage),
+          metadata: {
+            ...currentMetadata,
+            transactions
+          } as any,
           updated_at: new Date().toISOString()
         })
         .eq('id', data.artworkId);
 
       if (updateError) {
-        // Rollback transaction if artwork update fails
-        await supabase.from('transactions').delete().eq('id', transaction.id);
-        throw new Error('Failed to update artwork ownership');
+        console.error('Update error:', updateError);
+        throw new Error('Failed to complete purchase. Please try again.');
       }
 
       toast({
@@ -86,7 +100,7 @@ export const useFractionalOwnership = () => {
         description: `You now own ${data.ownershipPercentage}% of this artwork`,
       });
 
-      return { success: true, transaction };
+      return { success: true, transaction: newTransaction };
 
     } catch (error: any) {
       console.error('Purchase error:', error);
@@ -105,23 +119,31 @@ export const useFractionalOwnership = () => {
     if (!user) return { ownership: 0, transactions: [] };
 
     try {
-      const { data: transactions, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('buyer_user_id', user.id)
-        .eq('artwork_id', artworkId)
-        .eq('transaction_type', 'fraction_purchase')
-        .eq('status', 'completed');
+      // Get artwork with transactions from metadata
+      const { data: artwork, error } = await supabase
+        .from('artworks')
+        .select('metadata')
+        .eq('id', artworkId)
+        .single();
 
       if (error) throw error;
 
-      const totalOwnership = transactions?.reduce((sum, transaction) => {
-        const metadata = transaction.metadata as any;
-        const ownership = metadata?.ownership_percentage || 0;
-        return sum + ownership;
-      }, 0) || 0;
+      const metadata = (artwork?.metadata as any) || {};
+      const allTransactions = metadata.transactions || [];
+      
+      // Filter transactions for current user
+      const userTransactions = allTransactions.filter((t: any) => 
+        t.buyer_user_id === user.id && 
+        t.transaction_type === 'fraction_purchase' && 
+        t.status === 'completed'
+      );
 
-      return { ownership: totalOwnership, transactions: transactions || [] };
+      const totalOwnership = userTransactions.reduce((sum: number, transaction: any) => {
+        const ownership = transaction.metadata?.ownership_percentage || 0;
+        return sum + ownership;
+      }, 0);
+
+      return { ownership: totalOwnership, transactions: userTransactions };
 
     } catch (error: any) {
       console.error('Error fetching ownership:', error);

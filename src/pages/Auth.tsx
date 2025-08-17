@@ -14,8 +14,10 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('investor');
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   
-  const { signUp, signIn, signInWithGoogle, signInWithGithub, user } = useAuth();
+  const { signUp, signIn, signInWithGoogle, signInWithGithub, resetPassword, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -55,9 +57,13 @@ const Auth = () => {
     setIsLoading(false);
     
     if (error) {
+      let errorMessage = error.message;
+      if (error.message?.includes('captcha verification process failed')) {
+        errorMessage = "Authentication temporarily requires additional verification. Please try again or contact support.";
+      }
       toast({
         title: "Sign In Error", 
-        description: error.message,
+        description: errorMessage,
         variant: "destructive"
       });
     } else {
@@ -68,25 +74,64 @@ const Auth = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    const { error } = await signInWithGoogle();
+
+  const handleGithubSignIn = async () => {
+    const { error } = await signInWithGithub();
     if (error) {
+      let errorMessage = error.message;
+      if (error.message?.includes('provider is not enabled')) {
+        errorMessage = "GitHub login is not configured. Please contact support or use email/password.";
+      }
       toast({
-        title: "Google Sign In Error",
-        description: error.message,
+        title: "GitHub Sign In Error",
+        description: errorMessage,
         variant: "destructive"
       });
     }
   };
 
-  const handleGithubSignIn = async () => {
-    const { error } = await signInWithGithub();
+  const handleGoogleSignIn = async () => {
+    const { error } = await signInWithGoogle();
+    if (error) {
+      let errorMessage = error.message;
+      if (error.message?.includes('provider is not enabled')) {
+        errorMessage = "Google login is not configured. Please contact support or use email/password.";
+      }
+      toast({
+        title: "Google Sign In Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await resetPassword(resetEmail);
+    setIsLoading(false);
+
     if (error) {
       toast({
-        title: "GitHub Sign In Error",
+        title: "Reset Password Error",
         description: error.message,
         variant: "destructive"
       });
+    } else {
+      toast({
+        title: "Reset Email Sent",
+        description: "Check your email for password reset instructions"
+      });
+      setShowForgotPassword(false);
+      setResetEmail('');
     }
   };
 
@@ -125,13 +170,24 @@ const Auth = () => {
                   placeholder="Enter your password"
                 />
               </div>
-              <Button 
-                onClick={handleSignIn} 
-                className="w-full" 
-                disabled={isLoading}
-              >
-                {isLoading ? "Signing In..." : "Sign In"}
-              </Button>
+              
+              <div className="flex items-center justify-between">
+                <Button 
+                  onClick={handleSignIn} 
+                  className="flex-1 mr-2" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Signing In..." : "Sign In"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm"
+                >
+                  Forgot Password?
+                </Button>
+              </div>
             </TabsContent>
             
             <TabsContent value="signup" className="space-y-4">
@@ -209,6 +265,49 @@ const Auth = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <Card className="w-full max-w-md mt-4">
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl font-bold">Reset Password</CardTitle>
+            <CardDescription>Enter your email to receive reset instructions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Email</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="Enter your email"
+                />
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetEmail('');
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleForgotPassword}
+                  className="flex-1" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Sending..." : "Send Reset Email"}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

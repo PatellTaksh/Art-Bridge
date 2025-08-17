@@ -177,8 +177,64 @@ export const SearchFilter: React.FC<SearchFilterProps> = ({
       </div>
 
       {/* Desktop Filters */}
-      <div className="hidden md:block">
-        <FilterContent />
+      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* Search */}
+        <div className="lg:col-span-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search artworks..."
+              value={filters.search}
+              onChange={(e) => updateFilter('search', e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {/* Category */}
+        <Select value={filters.category} onValueChange={(value) => updateFilter('category', value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="Premium">Premium</SelectItem>
+            <SelectItem value="Accessible">Accessible</SelectItem>
+            <SelectItem value="Digital">Digital Art</SelectItem>
+            <SelectItem value="Traditional">Traditional</SelectItem>
+            <SelectItem value="Photography">Photography</SelectItem>
+            <SelectItem value="Sculpture">Sculpture</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Price Range */}
+        <Select value={filters.priceRange} onValueChange={(value) => updateFilter('priceRange', value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Price" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Prices</SelectItem>
+            <SelectItem value="0-1">0 - 1 ETH</SelectItem>
+            <SelectItem value="1-5">1 - 5 ETH</SelectItem>
+            <SelectItem value="5-10">5 - 10 ETH</SelectItem>
+            <SelectItem value="10-50">10 - 50 ETH</SelectItem>
+            <SelectItem value="50+">50+ ETH</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Sort By */}
+        <Select value={filters.sortBy} onValueChange={(value) => updateFilter('sortBy', value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Sort" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Recently Added</SelectItem>
+            <SelectItem value="oldest">Oldest First</SelectItem>
+            <SelectItem value="price-low">Price: Low to High</SelectItem>
+            <SelectItem value="price-high">Price: High to Low</SelectItem>
+            <SelectItem value="title">Title A-Z</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Active Filters Display */}
