@@ -89,6 +89,8 @@ const Auth = () => {
       let errorMessage = error.message;
       if (error.message?.includes('User already registered')) {
         errorMessage = "An account with this email already exists. Please sign in instead.";
+      } else if (error.message?.includes('captcha verification process failed')) {
+        errorMessage = "CAPTCHA verification failed. Please disable CAPTCHA in your Supabase dashboard under Authentication > Settings, or contact support.";
       }
       toast({
         title: "Sign Up Error",
@@ -142,7 +144,7 @@ const Auth = () => {
     if (error) {
       let errorMessage = error.message;
       if (error.message?.includes('captcha verification process failed')) {
-        errorMessage = "Authentication temporarily requires additional verification. Please try again or contact support.";
+        errorMessage = "CAPTCHA verification is enabled in your Supabase project. Please disable it in Authentication > Settings, or contact support for assistance.";
       } else if (error.message?.includes('Invalid login credentials')) {
         errorMessage = "Invalid email or password. Please check your credentials and try again.";
       } else if (error.message?.includes('Email not confirmed')) {
@@ -369,6 +371,17 @@ const Auth = () => {
                 Facebook
               </Button>
             </div>
+          </div>
+          
+          {/* Important Notice */}
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <h4 className="text-sm font-medium text-amber-800 mb-2">⚠️ CAPTCHA Issue Notice</h4>
+            <p className="text-xs text-amber-700 mb-2">
+              If you're experiencing login issues, your Supabase project has CAPTCHA protection enabled.
+            </p>
+            <p className="text-xs text-amber-700">
+              <strong>Quick Fix:</strong> Go to your Supabase Dashboard → Authentication → Settings → Enable "Disable signup" toggle temporarily, or disable CAPTCHA protection.
+            </p>
           </div>
         </CardContent>
       </Card>
