@@ -5,17 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users2, TrendingUp, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Bid {
-  id: string;
-  bidder: string;
-  amount: number;
-  timestamp: Date;
-}
+import { useBids } from "@/hooks/useAuctions";
 
 interface BiddingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  auctionId: string;
   artwork: {
     title: string;
     artist: string;
@@ -24,20 +19,16 @@ interface BiddingModalProps {
   };
 }
 
-const BiddingModal = ({ isOpen, onClose, artwork }: BiddingModalProps) => {
+const BiddingModal = ({ isOpen, onClose, auctionId, artwork }: BiddingModalProps) => {
   const [bidAmount, setBidAmount] = useState("");
   const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 45, seconds: 32 });
-  const [bidHistory, setBidHistory] = useState<Bid[]>([
-    { id: "1", bidder: "@ArtCollector23", amount: 4200, timestamp: new Date(Date.now() - 120000) },
-    { id: "2", bidder: "@ModernArt_Fan", amount: 4100, timestamp: new Date(Date.now() - 300000) },
-    { id: "3", bidder: "@GalleryMaster", amount: 4000, timestamp: new Date(Date.now() - 420000) },
-    { id: "4", bidder: "@VisionaryBuyer", amount: 3900, timestamp: new Date(Date.now() - 600000) },
-    { id: "5", bidder: "@ArtInvestor", amount: 3800, timestamp: new Date(Date.now() - 720000) },
-  ]);
-  const [currentHighestBid, setCurrentHighestBid] = useState(4200);
-  const [highestBidder, setHighestBidder] = useState("@ArtCollector23");
+  const [isPlacingBid, setIsPlacingBid] = useState(false);
   
+  const { bids, loading: bidsLoading, placeBid } = useBids(auctionId);
   const { toast } = useToast();
+  
+  const currentHighestBid = bids.length > 0 ? bids[0].amount : artwork.currentBid;
+  const highestBidder = bids.length > 0 ? bids[0].bidder_name : "No bids yet";
 
   const minimumBid = Math.ceil(currentHighestBid * 1.05); // 5% increase
 
@@ -58,66 +49,25 @@ const BiddingModal = ({ isOpen, onClose, artwork }: BiddingModalProps) => {
     return () => clearInterval(timer);
   }, []);
 
-  // Simulate real-time bid updates
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const interval = setInterval(() => {
-      // 20% chance of new bid every 10 seconds
-      if (Math.random() < 0.2) {
-        const newBid = currentHighestBid + Math.floor(Math.random() * 200) + 100;
-        const bidders = ["@NewCollector", "@ArtLover99", "@ModernInvestor", "@GalleryOwner"];
-        const randomBidder = bidders[Math.floor(Math.random() * bidders.length)];
-        
-        const newBidEntry: Bid = {
-          id: Date.now().toString(),
-          bidder: randomBidder,
-          amount: newBid,
-          timestamp: new Date()
-        };
-
-        setBidHistory(prev => [newBidEntry, ...prev.slice(0, 4)]);
-        setCurrentHighestBid(newBid);
-        setHighestBidder(randomBidder);
-
-        toast({
-          title: "New Bid Placed!",
-          description: `${randomBidder} bid $${newBid.toLocaleString()}`,
-        });
-      }
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [isOpen, currentHighestBid, toast]);
-
-  const handlePlaceBid = () => {
-    const bid = parseInt(bidAmount);
+  const handlePlaceBid = async () => {
+    const amount = parseFloat(bidAmount);
     
-    if (!bid || bid < minimumBid) {
+    if (isNaN(amount) || amount < minimumBid) {
       toast({
-        title: "Invalid Bid",
+        title: "Invalid Bid Amount",
         description: `Minimum bid is $${minimumBid.toLocaleString()}`,
         variant: "destructive",
       });
       return;
     }
 
-    const newBidEntry: Bid = {
-      id: Date.now().toString(),
-      bidder: "@You",
-      amount: bid,
-      timestamp: new Date()
-    };
+    setIsPlacingBid(true);
+    const result = await placeBid(amount);
+    setIsPlacingBid(false);
 
-    setBidHistory(prev => [newBidEntry, ...prev.slice(0, 4)]);
-    setCurrentHighestBid(bid);
-    setHighestBidder("@You");
-    setBidAmount("");
-
-    toast({
-      title: "Bid Placed Successfully!",
-      description: `You are now the highest bidder at $${bid.toLocaleString()}`,
-    });
+    if (result.success) {
+      setBidAmount("");
+    }
   };
 
   const formatTimeAgo = (timestamp: Date) => {
@@ -156,32 +106,32 @@ const BiddingModal = ({ isOpen, onClose, artwork }: BiddingModalProps) => {
             </div>
 
             {/* Current Bid Display */}
-            <div className="bg-background-secondary rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4">
               <div className="text-sm text-muted-foreground mb-1">Current Highest Bid</div>
               <div className="text-3xl font-bold text-primary mb-1">
                 ${currentHighestBid.toLocaleString()}
               </div>
               <div className="text-sm text-muted-foreground">
-                by {highestBidder} • {bidHistory[0] ? formatTimeAgo(bidHistory[0].timestamp) : ""}
+                by {highestBidder}
               </div>
             </div>
 
             {/* Timer */}
-            <div className="bg-background-secondary rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4">
               <div className="text-sm text-muted-foreground mb-3 flex items-center">
                 <Clock className="w-4 h-4 mr-2" />
                 Auction ends in:
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-background-tertiary rounded p-2">
+                <div className="bg-background rounded p-2">
                   <div className="text-xl font-bold text-primary">{timeLeft.hours}</div>
                   <div className="text-xs text-muted-foreground">Hours</div>
                 </div>
-                <div className="bg-background-tertiary rounded p-2">
+                <div className="bg-background rounded p-2">
                   <div className="text-xl font-bold text-primary">{timeLeft.minutes}</div>
                   <div className="text-xs text-muted-foreground">Minutes</div>
                 </div>
-                <div className="bg-background-tertiary rounded p-2">
+                <div className="bg-background rounded p-2">
                   <div className="text-xl font-bold text-primary">{timeLeft.seconds}</div>
                   <div className="text-xs text-muted-foreground">Seconds</div>
                 </div>
@@ -192,7 +142,7 @@ const BiddingModal = ({ isOpen, onClose, artwork }: BiddingModalProps) => {
           {/* Bidding Interface */}
           <div className="space-y-6">
             {/* Place Bid */}
-            <div className="bg-background-secondary rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4">
               <h4 className="text-lg font-semibold mb-4">Place Your Bid</h4>
               
               <div className="space-y-4">
@@ -215,51 +165,47 @@ const BiddingModal = ({ isOpen, onClose, artwork }: BiddingModalProps) => {
 
                 <Button 
                   onClick={handlePlaceBid}
-                  className="btn-hero w-full text-lg"
-                  disabled={!bidAmount || parseInt(bidAmount) < minimumBid}
+                  className="w-full"
+                  size="lg"
+                  disabled={isPlacingBid}
                 >
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  Place Bid
+                  {isPlacingBid ? "Placing Bid..." : "Place Bid"}
                 </Button>
               </div>
             </div>
 
             {/* Bid History */}
-            <div className="bg-background-secondary rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-semibold">Bid History</h4>
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Users2 className="w-4 h-4 mr-1" />
-                  {bidHistory.length} bidders
+                  {bids.length} bidders
                 </div>
               </div>
 
-              <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
-                {bidHistory.map((bid, index) => (
-                  <div 
-                    key={bid.id}
-                    className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
-                      index === 0 ? "bg-primary/10 border border-primary/20" : "bg-background-tertiary"
-                    }`}
-                  >
-                    <div>
-                      <div className="font-medium text-foreground">{bid.bidder}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatTimeAgo(bid.timestamp)}
+              <div className="space-y-4 max-h-64 overflow-y-auto">
+                {bidsLoading ? (
+                  <div className="text-center py-4">Loading bids...</div>
+                ) : bids.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground">No bids yet</div>
+                ) : (
+                  bids.map((bid) => (
+                    <div key={bid.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <div className="font-medium text-sm">{bid.bidder_name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatTimeAgo(new Date(bid.created_at))}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-primary">
+                          ${bid.amount.toLocaleString()}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-foreground">
-                        ${bid.amount.toLocaleString()}
-                      </div>
-                      {index === 0 && (
-                        <Badge variant="outline" className="text-xs border-primary text-primary">
-                          Highest
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>

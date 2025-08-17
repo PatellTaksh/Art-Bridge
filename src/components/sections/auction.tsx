@@ -201,6 +201,7 @@ const Auction = () => {
       <BiddingModal
         isOpen={showBiddingModal}
         onClose={() => setShowBiddingModal(false)}
+        auctionId="mock-auction-id"
         artwork={featuredArtwork}
       />
     </section>
