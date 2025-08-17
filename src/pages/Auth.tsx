@@ -242,6 +242,7 @@ const Auth = () => {
             </TabsContent>
           </Tabs>
           
+          {/* OAuth providers - temporarily disabled until configured */}
           <div className="mt-6 space-y-3">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -249,19 +250,22 @@ const Auth = () => {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
+                  OAuth providers (configure in Supabase dashboard)
                 </span>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" onClick={handleGoogleSignIn}>
-                Google
+              <Button variant="outline" disabled className="opacity-50">
+                Google (Configure)
               </Button>
-              <Button variant="outline" onClick={handleGithubSignIn}>
-                GitHub
+              <Button variant="outline" disabled className="opacity-50">
+                GitHub (Configure)
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Enable OAuth providers in your Supabase dashboard to use social login
+            </p>
           </div>
         </CardContent>
       </Card>
