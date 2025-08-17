@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 const CreateArtwork = () => {
   const { user } = useAuth();
@@ -122,17 +123,10 @@ const CreateArtwork = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="imageUrl">Image URL</Label>
-                  <Input
-                    id="imageUrl"
-                    name="imageUrl"
-                    type="url"
-                    value={formData.imageUrl}
-                    onChange={handleChange}
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
+                <ImageUpload
+                  currentImage={formData.imageUrl}
+                  onImageUploaded={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
