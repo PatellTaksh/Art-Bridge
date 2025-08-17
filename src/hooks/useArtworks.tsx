@@ -42,10 +42,7 @@ export const useArtworks = () => {
     try {
       let query = supabase
         .from('artworks')
-        .select(`
-          *,
-          profiles!artworks_owner_user_id_fkey(display_name)
-        `);
+        .select('*');
 
       // Apply filters
       if (filters) {
@@ -99,13 +96,30 @@ export const useArtworks = () => {
 
       if (fetchError) throw fetchError;
 
-      // Transform data to match ArtCard interface
-      const transformedArtworks: Artwork[] = (data || []).map((artwork: any) => ({
-        ...artwork,
-        artist: artwork.profiles?.display_name || 'Unknown Artist',
-        category: artwork.price_amount && artwork.price_amount > 10 ? 'Premium' : 'Accessible',
-        growth: `+${(Math.random() * 20).toFixed(1)}%` // Mock growth data
-      }));
+      // Fetch owner profiles separately since foreign key relationship doesn't exist
+      const transformedArtworks: Artwork[] = await Promise.all(
+        (data || []).map(async (artwork: any) => {
+          let artist = 'Unknown Artist';
+          
+          // Fetch owner profile if owner_user_id exists
+          if (artwork.owner_user_id) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('user_id', artwork.owner_user_id)
+              .single();
+            
+            artist = profile?.display_name || 'Unknown Artist';
+          }
+
+          return {
+            ...artwork,
+            artist,
+            category: artwork.price_amount && artwork.price_amount > 10 ? 'Premium' : 'Accessible',
+            growth: `+${(Math.random() * 20).toFixed(1)}%` // Mock growth data
+          };
+        })
+      );
 
       setArtworks(transformedArtworks);
     } catch (err: any) {
